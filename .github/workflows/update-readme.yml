@@ -1,45 +1,36 @@
-name: Auto Update README from Tests
+name: Create Branch from Main on README or Push
 
 on:
   push:
+    branches:
+      - main
     paths:
-      - 'test/**'
+      - 'README.md'
+      - '**'   # cualquier push a main
 
 jobs:
-  update-readme:
+  create-branch:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # necesario para crear ramas
+    permissions:
+      contents: write
 
-      - name: Set up Git
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Generate README from tests
+      - name: Create new branch from main
+        id: create_branch
         run: |
-          echo "# Test Summary" > README.md
-          echo "" >> README.md
-          echo "Updated automatically from test files" >> README.md
-          echo "" >> README.md
-          ls test >> README.md
-
-      - name: Create new branch
-        id: branch
-        run: |
-          BRANCH_NAME="auto/readme-update-$(date +%s)"
+          BRANCH_NAME="auto/main-snapshot-$(date +%Y%m%d-%H%M%S)"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           git checkout -b $BRANCH_NAME
 
-      - name: Commit changes
+      - name: Push new branch
         run: |
-          git add README.md
-          git commit -m "Auto update README from test changes" || echo "No changes to commit"
-
-      - name: Push branch
-        run: |
-          git push origin ${{ steps.branch.outputs.branch }}
+          git push origin ${{ steps.create_branch.outputs.branch }}
